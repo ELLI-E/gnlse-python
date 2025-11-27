@@ -5,7 +5,7 @@ Various plotting functions for visualizing GNLSE simulations using Matplotlib.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
 
 from gnlse.common import c
 
@@ -582,9 +582,9 @@ def plot_wavelength_vs_distance(solver, WL_range=None, ax=None,
     WL_asc = WL_asc[iis]
     IW = IW[:, iis]
 
-    interpolator = interp2d(WL_asc, solver.Z, IW)
+    interpolator = RectBivariateSpline(WL_asc, solver.Z, IW.T)
     newWL = np.linspace(np.min(WL_asc), np.max(WL_asc), IW.shape[1])
-    toshow = interpolator(newWL, solver.Z)
+    toshow = interpolator(newWL, solver.Z).T
 
     ax.imshow(toshow, origin='lower', aspect='auto', cmap=cmap,
               extent=[np.min(WL_asc), np.max(WL_asc), 0, np.max(solver.Z)],
@@ -637,9 +637,9 @@ def plot_wavelength_vs_distance_logarithmic(solver, WL_range=None,
     WL_asc = WL_asc[iis]
     lIW = lIW[:, iis]
 
-    interpolator = interp2d(WL_asc, solver.Z, lIW)
+    interpolator = RectBivariateSpline(WL_asc, solver.Z, lIW.T)
     newWL = np.linspace(np.min(WL_asc), np.max(WL_asc), lIW.shape[1])
-    toshow = interpolator(newWL, solver.Z)
+    toshow = interpolator(newWL, solver.Z).T
 
     ax.imshow(toshow, origin='lower', aspect='auto', cmap=cmap,
               extent=[np.min(WL_asc), np.max(WL_asc), 0, np.max(solver.Z)],
