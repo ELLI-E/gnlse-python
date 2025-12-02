@@ -73,6 +73,50 @@ class DispersionFiberFromTaylor(Dispersion):
         L = 1j * B - self.alpha / 2
         return L
 
+class DispersionFiberFromTaylorWithGain(Dispersion):
+    #under development - not yet functional
+    """Calculates the dispersion in frequency domain with the gain operator
+
+    Attributes
+     ----------
+    loss : float
+        Loss factor [dB/m]
+    betas : ndarray (N)
+        Derivatives of constant propagations at pump wavelength
+        [ps^2/m, ..., ps^n/m]
+    """
+
+    def __init__(self, loss, betas,fiber_area,dopant_concentration,emission_cross_section,absorption_cross_section,pump_power=None,overlap_pump=1,overlap_signal=1):
+        self.loss = loss
+        self.betas = betas
+
+        #active fiber parameters
+        self.fiber_area = fiber_area
+        self.dopant_concentration = dopant_concentration # if None, fiber is passive, otherwise model gain
+        self.pump_power = pump_power #assumed to be constant for now
+        self.emission_cross_section = emission_cross_section #need to insert the array for the wavelength dependent cross section here
+        self.absorption_cross_section = absorption_cross_section 
+        self.overlap_pump = overlap_pump
+        self.overlap_signal = overlap_signal
+
+    def N2(self,V):
+        Ip = self.pump_power/self.fiber_area
+        Is = np.mean(V**2) #basic model - intensity of signal is the average across the whole pulse
+
+
+        
+    def D(self, V):
+        # Damping
+        self.calc_loss()
+        # Taylor series for subsequent derivatives
+        # of constant propagation
+        B = sum(beta / math.factorial(i + 2) * V**(i + 2)
+                for i, beta in enumerate(self.betas))
+        #calculate N2
+        #N2 = getN2(amplifierParams,) use average power of the pulse?
+        #compute value of gain function
+        L = 1j * B - self.alpha / 2
+        return L
 
 class DispersionFiberFromInterpolation(Dispersion):
     """Calculates the propagation function in frequency domain, using
