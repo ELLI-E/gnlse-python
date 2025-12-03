@@ -206,12 +206,11 @@ class GNLSE:
         # Dispersion operator
 
         if setup.dispersion_model:
-           
             #if D includes gain, it needs the frequencies
             if self.active:
                 self.dispersion_model = setup.dispersion_model
                 self.dispersion_model.v = (self.Omega/(2*np.pi))
-                self.dispersion_model.AW = np.fft.fft
+                self.dispersion_model.AW = np.fft.fft(self.A)
             else:
                  self.D = setup.dispersion_model.D(self.V)
 
