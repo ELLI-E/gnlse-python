@@ -25,7 +25,7 @@ if __name__ == '__main__':
     setup.nonlinearity = 0.0
     # Dispersion: derivatives of propagation constant at central wavelength
     # n derivatives of betas are in [ps^n/m]
-    betas = np.array([0])
+    betas = np.array([-11.830e-3])
     # Input pulse: pulse duration [ps]
     tFWHM = 0.050
     # for dispersive length calculation
@@ -33,18 +33,10 @@ if __name__ == '__main__':
 
     # 3rd order soliton conditions
     ###########################################################################
-    # Dispersive length
-    LD = t0 ** 2 / np.abs(betas[0])
-    # Non-linear length for 3rd order soliton
-    LNL = LD / (3 ** 2)
-    # Input pulse: peak power [W]
-    power = 1 / (LNL * setup.nonlinearity)
-    # Length of soliton, in which it break dispersive characteristic
-    Z0 = np.pi * LD / 2
     # Fiber length [m]
     setup.fiber_length = .5
     # Type of pulse:  hyperbolic secant
-    setup.pulse_model = gnlse_main.SechEnvelope(power, 0.050)
+    setup.pulse_model = gnlse_main.SechEnvelope(1000, 0.050)
     # Loss coefficient [dB/m]
     loss = 0
     # Type of dyspersion operator: build from Taylor expansion
@@ -58,3 +50,5 @@ if __name__ == '__main__':
     pump_power = 9 #pump power in watts
 
     setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power)
+    solver = gnlse_main.gnlse.GNLSE(setup)
+    solver.D.N2()
