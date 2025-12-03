@@ -131,4 +131,6 @@ dmypy.json
 
 # Built Sphinx documentation
 docs/_build/
-
+# cross section data
+data/emissionCS.csv
+data/absorptionCS.csv
