@@ -3,8 +3,8 @@ import scipy.integrate
 import pyfftw
 import tqdm
 
-from gnlse.common import c
-from gnlse.import_export import write_mat, read_mat
+from gnlse_main.common import c
+from gnlse_main.import_export import write_mat, read_mat
 
 
 class GNLSESetup:

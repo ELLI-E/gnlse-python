@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import gnlse
+import gnlse_main
 
 if __name__ == '__main__':
-    setup = gnlse.gnlse.GNLSESetup()
+    setup = gnlse_main.gnlse.GNLSESetup()
 
     # Numerical parameters
     # number of grid time points
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # Fiber length [m]
     setup.fiber_length = .5
     # Type of pulse:  hyperbolic secant
-    setup.pulse_model = gnlse.SechEnvelope(power, 0.050)
+    setup.pulse_model = gnlse_main.SechEnvelope(power, 0.050)
     # Loss coefficient [dB/m]
     loss = 0
     # Type of dyspersion operator: build from Taylor expansion
@@ -57,4 +57,4 @@ if __name__ == '__main__':
     lifetime = 1e-3
     pump_power = 9 #pump power in watts
 
-    setup.dispersion_model = gnlse.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power)
+    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power)

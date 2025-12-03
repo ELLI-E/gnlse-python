@@ -10,8 +10,8 @@ import math
 import pandas as pd
 from scipy import interpolate
 
-from gnlse.common import c
-from gnlse.common import hplanck
+from gnlse_main.common import c
+from gnlse_main.common import hplanck
 
 class Dispersion(object):
     """

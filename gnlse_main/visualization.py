@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from scipy.interpolate import RectBivariateSpline
 
-from gnlse.common import c
+from gnlse_main.common import c
 
 
 def plot_frequency_vs_distance_logarithmic(solver, ax=None, norm=None,
