@@ -105,7 +105,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         self.overlap_signal = overlap_signal
 
     def N2(self):
-        if self.AW == None:
+        if type(self.AW) == bool:
             raise TypeError("Amplitude spectrum was not defined, cannot compute population inversion. D.AW must not be None.")
         Ip = self.pump_power/self.fiber_area
         Is = np.mean(self.AW**2) #basic model - intensity of signal is the average across the whole pulse
