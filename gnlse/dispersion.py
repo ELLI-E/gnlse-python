@@ -7,10 +7,11 @@ frequency domain.
 """
 import numpy as np
 import math
+import pandas as pd
 from scipy import interpolate
 
 from gnlse.common import c
-
+from gnlse.common import hplanck
 
 class Dispersion(object):
     """
@@ -75,6 +76,7 @@ class DispersionFiberFromTaylor(Dispersion):
 
 class DispersionFiberFromTaylorWithGain(Dispersion):
     #under development - not yet functional
+    #basic version - gain is applied equally at all points - no time dependence on measuring gain as intensities are averaged for now
     """Calculates the dispersion in frequency domain with the gain operator
 
     Attributes
@@ -86,23 +88,50 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         [ps^2/m, ..., ps^n/m]
     """
 
-    def __init__(self, loss, betas,fiber_area,dopant_concentration,emission_cross_section,absorption_cross_section,pump_power=None,overlap_pump=1,overlap_signal=1):
+    def __init__(self, loss, betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power=None,overlap_pump=1,overlap_signal=1):
         self.loss = loss
         self.betas = betas
 
         #active fiber parameters
         self.fiber_area = fiber_area
-        self.dopant_concentration = dopant_concentration # if None, fiber is passive, otherwise model gain
+        self.dopant_concentration = dopant_concentration # if None, fiber is passive, otherwise model gain, this is the concentration per unit volume * dz, so N_total = dopant_concentration * fiber_area
+        self.lifetime =lifetime
         self.pump_power = pump_power #assumed to be constant for now
-        self.emission_cross_section = emission_cross_section #need to insert the array for the wavelength dependent cross section here
-        self.absorption_cross_section = absorption_cross_section 
+        self.AW = None
+        self.v = None
+        self.emission = emission #emission and absorption contain pandas dataframes with wavelength in nm and cross sections in m^2
+        self.absorption = absorption
         self.overlap_pump = overlap_pump
         self.overlap_signal = overlap_signal
 
-    def N2(self,V):
+    def N2(self):
+        if self.AW == None:
+            raise TypeError("Amplitude spectrum was not defined, cannot compute population inversion. D.AW must not be None.")
         Ip = self.pump_power/self.fiber_area
-        Is = np.mean(V**2) #basic model - intensity of signal is the average across the whole pulse
+        Is = np.mean(self.AW**2) #basic model - intensity of signal is the average across the whole pulse
+        #set central frequency as average weighted by intensity
+        central_frequency = np.average(self.v,weights=self.AW**2)
+        #get as wavelength in nm
+        central_wavelength = (c/central_frequency)*1e9
+        #now we find the cross section at central_frequency
+        pump_wavelength = 975 #leaving this constant for Yb amplifier
+        pump_frequency = c/(pump_wavelength *1e-9)
+        em_cross_section_signal = self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"]-central_wavelength)).argmin()] #cross section @ closest wavelength
+        abs_cross_section_signal = self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"]-central_wavelength)).argmin()]
+        em_cross_section_pump = self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"]-pump_wavelength)).argmin()] 
+        abs_cross_section_pump = self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"]-pump_wavelength)).argmin()]
 
+        #Now compute R and W values
+        R12 = (em_cross_section_pump*Ip)/(hplanck*pump_frequency)
+        R21 = (abs_cross_section_pump*Ip)/(hplanck*pump_frequency)
+        W12 = (em_cross_section_signal*Is)/(hplanck*central_frequency)
+        W21 = (abs_cross_section_signal*Is)/(hplanck*central_frequency)
+
+        #finally compute N2
+        numerator = R12 + W12
+        denominator = R12 + W12 + R21 + W21 + (1/self.lifetime)
+        n2 = numerator/denominator
+        return n2*(self.fiber_area*self.dopant_concentration) #returns the absolute number of excited Yb atoms
 
         
     def D(self, V):

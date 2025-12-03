@@ -48,6 +48,7 @@ class GNLSESetup:
         self.time_window = None
         self.wavelength = None
         self.fiber_length = None
+        self.active_fiber = False #if fiber is active (True), will use modified gnlse equation
 
         self.z_saves = 200
         self.nonlinearity = 0
@@ -153,6 +154,7 @@ class GNLSE:
         self.atol = setup.atol
         self.method = setup.method
         self.N = setup.resolution
+        self.active = setup.active_fiber
 
         # Time domain grid
         self.t = np.linspace(-setup.time_window / 2,
@@ -199,6 +201,9 @@ class GNLSE:
         # Dispersion operator
         if setup.dispersion_model:
             self.D = setup.dispersion_model.D(self.V)
+            #if D includes gain, it needs the frequencies
+            if self.active:
+                self.D.v = (self.Omega/(2*np.pi))
         else:
             self.D = np.zeros(self.V.shape)
 
@@ -234,7 +239,9 @@ class GNLSE:
 
             progress_bar.n = round(z, 3)
             progress_bar.update(0)
-
+            #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
+            if self.active:
+                self.D.AW = AW
             x[:] = AW * np.exp(self.D * z)
             At = plan_forward().copy()
             IT = np.abs(At)**2
