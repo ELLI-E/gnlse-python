@@ -198,20 +198,25 @@ class GNLSE:
                 self.RW = self.N * np.fft.ifft(
                     np.fft.fftshift(np.transpose(RT)))
 
-        # Dispersion operator
-        if setup.dispersion_model:
-            self.D = setup.dispersion_model.D(self.V)
-            #if D includes gain, it needs the frequencies
-            if self.active:
-                self.D.v = (self.Omega/(2*np.pi))
-        else:
-            self.D = np.zeros(self.V.shape)
-
         # Input pulse
         if hasattr(setup.pulse_model, 'A'):
             self.A = setup.pulse_model.A(self.t)
         else:
             self.A = setup.pulse_model
+        # Dispersion operator
+
+        if setup.dispersion_model:
+           
+            #if D includes gain, it needs the frequencies
+            if self.active:
+                self.dispersion_model = setup.dispersion_model
+                self.dispersion_model.v = (self.Omega/(2*np.pi))
+                self.dispersion_model.AW = np.fft.fft
+            else:
+                 self.D = setup.dispersion_model.D(self.V)
+
+        else:
+            self.D = np.zeros(self.V.shape)
 
     def run(self):
         """
@@ -241,7 +246,9 @@ class GNLSE:
             progress_bar.update(0)
             #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
             if self.active:
-                self.D.AW = AW
+                self.dispersion_model.AW = AW #if fiber is active, update the amplitude spectrum
+                self.D = self.dispersion_model.D(self.V)
+            
             x[:] = AW * np.exp(self.D * z)
             At = plan_forward().copy()
             IT = np.abs(At)**2
