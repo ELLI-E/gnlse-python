@@ -108,9 +108,10 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         if type(self.AW) == bool:
             raise TypeError("Amplitude spectrum was not defined, cannot compute population inversion. D.AW must not be None.")
         Ip = self.pump_power/self.fiber_area
-        Is = np.mean(self.AW**2) #basic model - intensity of signal is the average across the whole pulse
+        Is = np.mean(np.multiply(self.AW,np.conjugate(self.AW))) #basic model - intensity of signal is the average across the whole pulse
         #set central frequency as average weighted by intensity
-        central_frequency = np.average(self.v,weights=self.AW**2)
+        
+        central_frequency = np.average(self.v,weights=np.multiply(self.AW,np.conjugate(self.AW)))
         #get as wavelength in nm
         central_wavelength = (c/central_frequency)*1e9
         #now we find the cross section at central_frequency

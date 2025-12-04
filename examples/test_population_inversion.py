@@ -49,6 +49,8 @@ if __name__ == '__main__':
     lifetime = 1e-3
     pump_power = 9 #pump power in watts
 
+    setup.active_fiber=True
     setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power)
     solver = gnlse_main.gnlse.GNLSE(setup)
-    solver.D.N2()
+    N2 = solver.dispersion_model.N2()
+    print(N2)
