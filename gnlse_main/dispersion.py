@@ -88,7 +88,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         [ps^2/m, ..., ps^n/m]
     """
 
-    def __init__(self, loss, betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power=None,overlap_pump=1,overlap_signal=1):
+    def __init__(self, loss, betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power=None,overlap_pump=1,overlap_signal=1,repetition_rate=1e6):
         self.loss = loss
         self.betas = betas
 
@@ -103,30 +103,35 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         self.absorption = absorption
         self.overlap_pump = overlap_pump
         self.overlap_signal = overlap_signal
-
+        self.repetition_rate = repetition_rate #defaults to 1MHz
+        self.dt = None
     def N2(self):
         if type(self.AW) == bool:
             raise TypeError("Amplitude spectrum was not defined, cannot compute population inversion. D.AW must not be None.")
         Ip = self.pump_power/self.fiber_area
-        Is = np.mean(np.multiply(self.AW,np.conjugate(self.AW))) #basic model - intensity of signal is the average across the whole pulse
+        Isw = np.square(np.abs(self.AW))
+        #first we find the pulse energy - integrate Isw over v
+        Ist = np.square(np.abs(np.fft.ifft(self.AW)))
+        pulse_energy = np.trapz(Ist,dx=(self.dt*1e-12))
+        Ps = pulse_energy * self.repetition_rate #average signal power
+        Is = Ps/self.fiber_area
         #set central frequency as average weighted by intensity
-        
-        central_frequency = np.average(self.v,weights=np.multiply(self.AW,np.conjugate(self.AW)))
+        central_frequency = np.average(self.v,weights=Isw)
         #get as wavelength in nm
-        central_wavelength = (c/central_frequency)*1e9
+        central_wavelength = (c/central_frequency)*1e12
         #now we find the cross section at central_frequency
         pump_wavelength = 975 #leaving this constant for Yb amplifier
-        pump_frequency = c/(pump_wavelength *1e-9)
+        pump_frequency = c/(pump_wavelength *1e-12)
         em_cross_section_signal = self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"]-central_wavelength)).argmin()] #cross section @ closest wavelength
         abs_cross_section_signal = self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"]-central_wavelength)).argmin()]
         em_cross_section_pump = self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"]-pump_wavelength)).argmin()] 
         abs_cross_section_pump = self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"]-pump_wavelength)).argmin()]
 
         #Now compute R and W values
-        R12 = (em_cross_section_pump*Ip)/(hplanck*pump_frequency)
-        R21 = (abs_cross_section_pump*Ip)/(hplanck*pump_frequency)
-        W12 = (em_cross_section_signal*Is)/(hplanck*central_frequency)
-        W21 = (abs_cross_section_signal*Is)/(hplanck*central_frequency)
+        R12 = (abs_cross_section_pump*Ip)/(hplanck*pump_frequency)
+        R21 = (em_cross_section_pump*Ip)/(hplanck*pump_frequency)
+        W12 = (abs_cross_section_signal*Is)/(hplanck*central_frequency)
+        W21 = (em_cross_section_signal*Is)/(hplanck*central_frequency)
 
         #finally compute N2
         numerator = R12 + W12
