@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # Fiber length [m]
     setup.fiber_length = .5
     # Type of pulse:  hyperbolic secant
-    setup.pulse_model = gnlse_main.SechEnvelope(1000, 0.050)
+    setup.pulse_model = gnlse_main.GaussianEnvelope(331400, 0.050)
     # Loss coefficient [dB/m]
     loss = 0
     # Type of dyspersion operator: build from Taylor expansion
@@ -47,10 +47,12 @@ if __name__ == '__main__':
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
     lifetime = 1e-3
+    repetition_rate = 1e8 #100MHz
     pump_power = 9 #pump power in watts
 
+    setup.self_steepening = True
     setup.active_fiber=True
-    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power)
+    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
     solver = gnlse_main.gnlse.GNLSE(setup)
     N2 = solver.dispersion_model.N2()
     print(N2)
