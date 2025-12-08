@@ -209,7 +209,8 @@ class GNLSE:
             #if D includes gain, it needs the frequencies
             if self.active:
                 self.dispersion_model = setup.dispersion_model
-                self.dispersion_model.v = ((self.Omega * 1e12)/(2*np.pi)) #this part is broken - needs fix
+                #self.dispersion_model.v = ((self.Omega * 1e12)/(2*np.pi))
+                self.dispersion_model.SetFrequency(((self.Omega * 1e12)/(2*np.pi)))
                 self.dispersion_model.AW = np.fft.fft(self.A)
                 self.dispersion_model.dt = self.t[1] - self.t[0]
             else:
@@ -248,6 +249,7 @@ class GNLSE:
             if self.active:
                 self.dispersion_model.AW = AW #if fiber is active, update the amplitude spectrum
                 self.D = self.dispersion_model.D(self.V)
+                self.D = np.fft.fftshift(self.D) #taking same step as above
             
             x[:] = AW * np.exp(self.D * z)
             At = plan_forward().copy()

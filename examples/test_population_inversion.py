@@ -43,7 +43,7 @@ if __name__ == '__main__':
     #Set parameters necessary for gain modelling
     gain_medium_radius = 3e-6
     fiber_area = np.pi * (gain_medium_radius**2)
-    dopant_concentration = (5e25)*(setup.fiber_length/setup.z_saves)
+    dopant_concentration = (5e25)
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
     lifetime = 1e-3
@@ -56,3 +56,10 @@ if __name__ == '__main__':
     solver = gnlse_main.gnlse.GNLSE(setup)
     N2 = solver.dispersion_model.N2()
     print(N2)
+    gain = solver.dispersion_model.CalculateGain()
+    print(gain)
+    plt.plot(solver.dispersion_model.wavelengths,gain)
+    #test in dispersion operator
+    solver.dispersion_model.D(solver.V)
+    plt.xlim(800,1300)
+    plt.show()

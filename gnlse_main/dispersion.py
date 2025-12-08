@@ -105,6 +105,8 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         self.overlap_signal = overlap_signal
         self.repetition_rate = repetition_rate #defaults to 1MHz
         self.dt = None
+        self.N2Total = None
+        self.NT = None
     def N2(self):
         if type(self.AW) == bool:
             raise TypeError("Amplitude spectrum was not defined, cannot compute population inversion. D.AW must not be None.")
@@ -137,9 +139,23 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         numerator = R12 + W12
         denominator = R12 + W12 + R21 + W21 + (1/self.lifetime)
         n2 = numerator/denominator
-        return n2*(self.fiber_area*self.dopant_concentration) #returns the absolute number of excited Yb atoms
+        self.N2Total = n2*(self.dopant_concentration)
+        self.NT = self.dopant_concentration
+        return n2*self.dopant_concentration #returns the absolute number of excited Yb atoms
+    def SetFrequency(self,v):
+        self.v = v
+        self.wavelengths = (c/v)*1e12
+        self.sigma_a = np.array([self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"] - wavelength)).argmin()] for wavelength in self.wavelengths])
+        self.sigma_e = np.array([self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"] - wavelength)).argmin()] for wavelength in self.wavelengths])
 
+    def CalculateGain(self):
+        n2 = self.N2Total/self.NT
         
+        lhs = np.multiply(self.sigma_e, n2)
+        rhs = np.multiply(self.sigma_a, np.subtract(1, n2))
+        gain = self.NT * np.subtract(lhs,rhs)
+        return gain
+    
     def D(self, V):
         # Damping
         self.calc_loss()
@@ -147,10 +163,9 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         # of constant propagation
         B = sum(beta / math.factorial(i + 2) * V**(i + 2)
                 for i, beta in enumerate(self.betas))
-        #calculate N2
-        #N2 = getN2(amplifierParams,) use average power of the pulse?
         #compute value of gain function
-        L = 1j * B - self.alpha / 2
+        gain = self.CalculateGain()
+        L = 1j * B - (self.alpha / 2) + (gain/2) 
         return L
 
 class DispersionFiberFromInterpolation(Dispersion):
