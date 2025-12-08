@@ -149,6 +149,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         self.sigma_e = np.array([self.emission[r"cross section(m^2)"][(np.abs(self.emission["wavelength(nm)"] - wavelength)).argmin()] for wavelength in self.wavelengths])
 
     def CalculateGain(self):
+        self.N2()
         n2 = self.N2Total/self.NT
         
         lhs = np.multiply(self.sigma_e, n2)

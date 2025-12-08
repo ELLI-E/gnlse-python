@@ -230,7 +230,8 @@ class GNLSE:
             Simulation results in the form of a ``Solution`` object.
         """
         dt = self.t[1] - self.t[0]
-        self.D = np.fft.fftshift(self.D)
+        if self.active == False:
+            self.D = np.fft.fftshift(self.D)
         x = pyfftw.empty_aligned(self.N, dtype="complex128")
         X = pyfftw.empty_aligned(self.N, dtype="complex128")
         plan_forward = pyfftw.FFTW(x, X)

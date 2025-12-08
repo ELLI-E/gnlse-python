@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import gnlse_main
-
+from copy import deepcopy
 if __name__ == '__main__':
     setup = gnlse_main.gnlse.GNLSESetup()
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # Fiber length [m]
     setup.fiber_length = .5
     # Type of pulse:  hyperbolic secant
-    setup.pulse_model = gnlse_main.GaussianEnvelope(331400, 0.050)
+    setup.pulse_model = gnlse_main.GaussianEnvelope(10000, 0.050)
     # Loss coefficient [dB/m]
     loss = 0
     # Type of dyspersion operator: build from Taylor expansion
@@ -52,14 +52,20 @@ if __name__ == '__main__':
 
     setup.self_steepening = True
     setup.active_fiber=True
+    setup_no_gain = deepcopy(setup)
+    setup_no_gain.active_fiber = False
+
     setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
+    setup_no_gain.dispersion_model = gnlse_main.DispersionFiberFromTaylor(loss,betas)
+    
     solver = gnlse_main.gnlse.GNLSE(setup)
-    N2 = solver.dispersion_model.N2()
-    print(N2)
-    gain = solver.dispersion_model.CalculateGain()
-    print(gain)
-    plt.plot(solver.dispersion_model.wavelengths,gain)
+    solver_no_gain = gnlse_main.gnlse.GNLSE(setup_no_gain)
+    
     #test in dispersion operator
-    solver.dispersion_model.D(solver.V)
-    plt.xlim(800,1300)
+    solution = solver.run()
+    solution_no_gain = solver_no_gain.run()
+
+    gnlse_main.plot_wavelength_vs_distance(solution, WL_range=[800, 1400])
+    plt.figure()
+    gnlse_main.plot_wavelength_vs_distance(solution_no_gain, WL_range=[800, 1400])
     plt.show()
