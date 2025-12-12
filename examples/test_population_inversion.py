@@ -52,20 +52,16 @@ if __name__ == '__main__':
 
     setup.self_steepening = True
     setup.active_fiber=True
-    setup_no_gain = deepcopy(setup)
-    setup_no_gain.active_fiber = False
+
 
     setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
-    setup_no_gain.dispersion_model = gnlse_main.DispersionFiberFromTaylor(loss,betas)
-    
+
     solver = gnlse_main.gnlse.GNLSE(setup)
-    solver_no_gain = gnlse_main.gnlse.GNLSE(setup_no_gain)
     
     #test in dispersion operator
     solution = solver.run()
-    solution_no_gain = solver_no_gain.run()
 
-    gnlse_main.plot_wavelength_vs_distance(solution, WL_range=[800, 1400])
+    gnlse_main.plot_delay_vs_distance(solution)
     plt.figure()
-    gnlse_main.plot_wavelength_vs_distance(solution_no_gain, WL_range=[800, 1400])
+    gnlse_main.visualization.plot_energy_vs_distance(solution)
     plt.show()
