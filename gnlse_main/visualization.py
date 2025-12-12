@@ -648,6 +648,25 @@ def plot_wavelength_vs_distance_logarithmic(solver, WL_range=None,
     ax.set_ylabel("Distance [m]")
     return ax
 
+def plot_energy_vs_distance(solution,ax=None):
+    #a line plot showing the change in intensity over distance
+    #need to know energy of the pulse, average power, peak power
+    if ax == None:
+        ax = plt.gca()
+
+    dt = solution.t[1] - solution.t[0]
+    #at each distance slice, get the total pulse energy
+    pulse_energy = [] #empty array to hold pulse energies
+
+    for A in solution.At:
+        #iterating over each step in the time domain
+        pulse_energy.append(np.trapezoid(np.abs(np.square(A)),dx=dt*1e-12)) #integrating to find the pulse energy
+    
+    ax.loglog(solution.Z,pulse_energy)
+    ax.set_ylabel("Pulse Energy(J)")
+    ax.set_xlabel("Distance(m)")
+    return ax
+    
 
 def quick_plot(solution):
     """Plotting results in time and frequency domain for default value
