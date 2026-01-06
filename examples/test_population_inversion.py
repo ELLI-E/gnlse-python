@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # time window [ps]
     setup.time_window = 12.5
     # number of distance points to save
-    setup.z_saves = 200
+    setup.z_saves = 400
     # relative tolerance for ode solver
     setup.rtol = 1e-6
     # absoulte tolerance for ode solver
@@ -22,23 +22,25 @@ if __name__ == '__main__':
     # Central wavelength [nm]
     setup.wavelength = 1030
     # Nonlinear coefficient [1/W/m]
-    setup.nonlinearity = 0.0
+    setup.nonlinearity = 0
     # Dispersion: derivatives of propagation constant at central wavelength
     # n derivatives of betas are in [ps^n/m]
-    betas = np.array([2.3e-2])
+    betas = np.array([2.3e-2,58*1e-6])
     # Input pulse: pulse duration [ps]
-    tFWHM = 0.050
+    tFWHM = 0.5
     # for dispersive length calculation
     t0 = tFWHM / 2 / np.log(1 + np.sqrt(2))
 
     # 3rd order soliton conditions
     ###########################################################################
     # Fiber length [m]
-    setup.fiber_length = 0.5
+    setup.fiber_length = 1
     # Type of pulse:  gaussian
-    pulseEnergy = 0  #desired pulse energy
-    peakPowerGaussian = 0.94 * (pulseEnergy/tFWHM)
-    setup.pulse_model = gnlse_main.GaussianEnvelope(10000, 0.050)
+    pulseEnergy = 20e-12  #desired pulse energy in joules
+    peakPowerGaussian = 0.94 * (pulseEnergy/(tFWHM*1e-12))
+    setup.pulse_model = gnlse_main.GaussianEnvelope(peakPowerGaussian, tFWHM)
+    dt = np.linspace(-setup.time_window/2,setup.time_window/2,setup.resolution)[1]-np.linspace(-setup.time_window/2,setup.time_window/2,setup.resolution)[0]
+    print(f"Pulse energy: {np.trapezoid(np.square(np.abs(setup.pulse_model.A(np.linspace(-setup.time_window/2,setup.time_window/2,setup.resolution)))),dx=dt*1e-12)}")
     # Loss coefficient [dB/m]
     loss = 0.5/1000
     # Type of dyspersion operator: build from Taylor expansion
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
     lifetime = 0.85e-3
-    repetition_rate = 1e8 #100MHz
+    repetition_rate = 1e4 #10kHz
     pump_power = 9 #pump power in watts
 
     setup.self_steepening = True
@@ -64,6 +66,8 @@ if __name__ == '__main__':
     solution = solver.run()
 
     gnlse_main.plot_delay_vs_distance(solution)
-    plt.figure()
+    plt.figure(figsize=(10,3))
     gnlse_main.visualization.plot_energy_vs_distance(solution)
+    plt.figure()
+    gnlse_main.plot_wavelength_vs_distance(solution,[1000,1100])
     plt.show()
