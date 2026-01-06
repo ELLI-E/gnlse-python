@@ -25,7 +25,7 @@ if __name__ == '__main__':
     setup.nonlinearity = 0.0
     # Dispersion: derivatives of propagation constant at central wavelength
     # n derivatives of betas are in [ps^n/m]
-    betas = np.array([-11.830e-3])
+    betas = np.array([2.3e-2])
     # Input pulse: pulse duration [ps]
     tFWHM = 0.050
     # for dispersive length calculation
@@ -34,19 +34,21 @@ if __name__ == '__main__':
     # 3rd order soliton conditions
     ###########################################################################
     # Fiber length [m]
-    setup.fiber_length = .5
-    # Type of pulse:  hyperbolic secant
+    setup.fiber_length = 0.5
+    # Type of pulse:  gaussian
+    pulseEnergy = 0  #desired pulse energy
+    peakPowerGaussian = 0.94 * (pulseEnergy/tFWHM)
     setup.pulse_model = gnlse_main.GaussianEnvelope(10000, 0.050)
     # Loss coefficient [dB/m]
-    loss = 0
+    loss = 0.5/1000
     # Type of dyspersion operator: build from Taylor expansion
     #Set parameters necessary for gain modelling
-    gain_medium_radius = 3e-6
+    gain_medium_radius = (11.6e-6)*0.5
     fiber_area = np.pi * (gain_medium_radius**2)
     dopant_concentration = (5e25)
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
-    lifetime = 1e-3
+    lifetime = 0.85e-3
     repetition_rate = 1e8 #100MHz
     pump_power = 9 #pump power in watts
 
