@@ -238,7 +238,6 @@ class GNLSE:
         plan_inverse = pyfftw.FFTW(X, x, direction="FFTW_BACKWARD")
 
         progress_bar = tqdm.tqdm(total=self.fiber_length, unit='m')
-
         def rhs(z, AW):
             """
             The right hand side of the differential equation to integrate.
@@ -248,7 +247,10 @@ class GNLSE:
             progress_bar.update(0)
             #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
             if self.active:
-                self.dispersion_model.AW = AW #if fiber is active, update the amplitude spectrum
+                if z == 0.0:
+                    self.dispersion_model.AW = AW #if fiber is active, update the amplitude spectrum
+                else:
+                    self.dispersion_model.AW = x[:]
                 self.D = self.dispersion_model.D(self.V)
                 self.D = np.fft.fftshift(self.D) #taking same step as above
             
@@ -293,5 +295,5 @@ class GNLSE:
                 self.D) * Z[i]) / self.scale
             At[i, :] = np.fft.fft(AW[i, :])
             AW[i, :] = np.fft.fftshift(AW[i, :]) * self.N * dt
-
+        
         return Solution(self.t, self.Omega, self.w_0, Z, At, AW)
