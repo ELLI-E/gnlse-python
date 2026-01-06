@@ -247,9 +247,7 @@ class GNLSE:
             progress_bar.update(0)
             #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
             if self.active:
-                if z == 0.0:
-                    self.dispersion_model.AW = AW #if fiber is active, update the amplitude spectrum
-                else:
+                if z != 0.0:
                     self.dispersion_model.AW = x[:]
                 self.D = self.dispersion_model.D(self.V)
                 self.D = np.fft.fftshift(self.D) #taking same step as above

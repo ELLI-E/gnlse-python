@@ -113,8 +113,8 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         Ip = self.pump_power/self.fiber_area
         Isw = np.square(np.abs(self.AW))
         #first we find the pulse energy - integrate Isw over v
-        Ist = np.square(np.abs(np.fft.ifft(self.AW)))
-        pulse_energy = np.trapz(Ist,dx=(self.dt*1e-12))
+        At = np.fft.ifft(self.AW)
+        pulse_energy = np.trapezoid(np.square(np.abs(At)),dx=(self.dt*1e-12))
         Ps = pulse_energy * self.repetition_rate #average signal power
         Is = Ps/self.fiber_area
         #set central frequency as average weighted by intensity
