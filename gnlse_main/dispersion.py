@@ -166,7 +166,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
                 for i, beta in enumerate(self.betas))
         #compute value of gain function
         gain = self.CalculateGain()
-        L = 1j * B - (self.alpha / 2) + (gain/2) 
+        L = (1j * B) - (self.alpha / 2) + (gain/4) 
         return L
 
 class DispersionFiberFromInterpolation(Dispersion):
