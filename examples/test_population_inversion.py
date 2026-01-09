@@ -31,8 +31,6 @@ if __name__ == '__main__':
     # for dispersive length calculation
     t0 = tFWHM / 2 / np.log(1 + np.sqrt(2))
 
-    # 3rd order soliton conditions
-    ###########################################################################
     # Fiber length [m]
     setup.fiber_length = 1
     # Type of pulse:  gaussian
@@ -51,11 +49,11 @@ if __name__ == '__main__':
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
     lifetime = 0.85e-3
-    repetition_rate = 1e4 #10kHz
-    pump_power = 9 #pump power in watts
+    repetition_rate = 1e6 #10kHz
+    pump_power = 5 #pump power in watts
 
     setup.self_steepening = True
-    setup.active_fiber=True
+    setup.active_fiber = True
 
 
     setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
@@ -70,4 +68,12 @@ if __name__ == '__main__':
     gnlse_main.visualization.plot_energy_vs_distance(solution)
     plt.figure()
     gnlse_main.plot_wavelength_vs_distance(solution,[1000,1100])
+    plt.figure()
+    plt.plot(solver.n2log["z"],solver.n2log["n2"])
+    plt.xlabel("z")
+    plt.ylabel("$n_2$")
+    plt.ylim(0,1)
+    plt.figure()
+    plt.plot(solver.n2log["z"],solver.n2log["E"])
     plt.show()
+    

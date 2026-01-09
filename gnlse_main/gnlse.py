@@ -155,6 +155,7 @@ class GNLSE:
         self.method = setup.method
         self.N = setup.resolution
         self.active = setup.active_fiber
+        self.n2log = {"z":[],"n2":[],"E":[],"rv":[]}
 
         # Time domain grid
         self.t = np.linspace(-setup.time_window / 2,
@@ -250,6 +251,10 @@ class GNLSE:
                 if z != 0.0:
                     self.dispersion_model.AW = x[:]
                 self.D = self.dispersion_model.D(self.V)
+
+                self.n2log["z"].append(z)
+                self.n2log["n2"].append(self.dispersion_model.N2Total/self.dispersion_model.dopant_concentration)
+                self.n2log["E"].append(self.dispersion_model.pulse_energy_log)
                 self.D = np.fft.fftshift(self.D) #taking same step as above
             
             x[:] = AW * np.exp(self.D * z)
@@ -270,7 +275,7 @@ class GNLSE:
 
             rv = 1j * self.gamma * self.W * M * np.exp(
                 -self.D * z)
-
+            self.n2log["rv"].append(rv)
             return rv
 
         Z = np.linspace(0, self.fiber_length, self.z_saves)
@@ -281,7 +286,8 @@ class GNLSE:
             t_eval=Z,
             rtol=self.rtol,
             atol=self.atol,
-            method=self.method)
+            method=self.method,
+            max_step = (self.fiber_length/self.z_saves))
         AW = solution.y.T
 
         progress_bar.close()
