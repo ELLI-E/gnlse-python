@@ -667,6 +667,24 @@ def plot_energy_vs_distance(solution,ax=None):
     ax.set_xlabel("Distance(m)")
     return ax
 
+def plot_final_spectrum(solution,WL_range,include_initial = True,ax=None):
+    if ax == None:
+        ax = plt.gca()
+    
+    finalspectrum = np.abs(np.square(solution.AW[-1]))
+    finalspectrum = np.divide(finalspectrum,max(finalspectrum))
+    WL = 2 * np.pi * c / solution.W  # wavelength grid
+    ax.plot(WL,finalspectrum,label="final spectrum")
+    if include_initial:
+        initialspectrum = np.abs(np.square(solution.AW[0]))
+        initialspectrum = np.divide(initialspectrum,max(initialspectrum))
+        ax.plot(WL,initialspectrum,label="initial spectrum")
+    ax.set_xlim(WL_range)
+    ax.set_ylabel("Intensity")
+    ax.set_xlabel("Wavelength")
+    ax.legend(loc="upper right")
+    return ax
+
 def plot_energy_vs_distance_logarithmic(solution,ax=None):
     #a line plot showing the change in intensity over distance
     #need to know energy of the pulse, average power, peak power
