@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import gnlse_main
+import gnlse_main.gain
 from copy import deepcopy
 if __name__ == '__main__':
     setup = gnlse_main.gnlse.GNLSESetup()
@@ -55,9 +56,9 @@ if __name__ == '__main__':
     setup.self_steepening = True
     setup.active_fiber = True
 
-
-    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
-
+    setup.gain = gnlse_main.gain.GainModel(emission,absorption,lifetime,fiber_area,repetition_rate,pump_power,dopant_concentration)
+    #setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
+    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylor(loss,betas)
     solver = gnlse_main.gnlse.GNLSE(setup)
     
     #test in dispersion operator
@@ -66,14 +67,4 @@ if __name__ == '__main__':
     gnlse_main.plot_delay_vs_distance(solution)
     plt.figure(figsize=(10,3))
     gnlse_main.visualization.plot_energy_vs_distance(solution)
-    plt.figure()
-    gnlse_main.plot_wavelength_vs_distance(solution,[1000,1100])
-    plt.figure()
-    plt.plot(solver.n2log["z"],solver.n2log["n2"])
-    plt.xlabel("z")
-    plt.ylabel("$n_2$")
-    plt.ylim(0,1)
-    plt.figure()
-    plt.plot(solver.n2log["z"],solver.n2log["E"])
     plt.show()
-    

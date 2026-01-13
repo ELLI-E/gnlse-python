@@ -2,7 +2,8 @@ import numpy as np
 import scipy.integrate
 import pyfftw
 import tqdm
-
+import inspect
+from copy import deepcopy
 from gnlse_main.common import c
 from gnlse_main.import_export import write_mat, read_mat
 
@@ -56,6 +57,7 @@ class GNLSESetup:
         self.dispersion_model = None
         self.raman_model = None
         self.self_steepening = False
+        self.gain = False
 
         self.rtol = 1e-3
         self.atol = 1e-4
@@ -155,7 +157,7 @@ class GNLSE:
         self.method = setup.method
         self.N = setup.resolution
         self.active = setup.active_fiber
-        self.n2log = {"z":[],"n2":[],"E":[],"rv":[]}
+        self.n2log = {"z":[],"n2":[],"E":[],"rv":[],"stepsize":[],"G":[]}
 
         # Time domain grid
         self.t = np.linspace(-setup.time_window / 2,
@@ -208,15 +210,13 @@ class GNLSE:
 
         if setup.dispersion_model:
             #if D includes gain, it needs the frequencies
-            if self.active:
-                self.dispersion_model = setup.dispersion_model
-                #self.dispersion_model.v = ((self.Omega * 1e12)/(2*np.pi))
-                self.dispersion_model.SetFrequency(((self.Omega * 1e12)/(2*np.pi)))
-                self.dispersion_model.AW = np.fft.fft(self.A)
-                self.dispersion_model.dt = self.t[1] - self.t[0]
-            else:
-                 self.D = setup.dispersion_model.D(self.V)
-
+            self.D = setup.dispersion_model.D(self.V)
+        if self.active:
+            self.gain_model = setup.gain
+            self.gain_model.SetFrequency(((self.Omega * 1e12)/(2*np.pi)))
+            self.gain_model.AW = np.fft.fft(self.A)
+            self.gain_model.dt = self.t[1] - self.t[0]
+            
         else:
             self.D = np.zeros(self.V.shape)
 
@@ -231,8 +231,8 @@ class GNLSE:
             Simulation results in the form of a ``Solution`` object.
         """
         dt = self.t[1] - self.t[0]
-        if self.active == False:
-            self.D = np.fft.fftshift(self.D)
+        self.D = np.fft.fftshift(self.D)
+
         x = pyfftw.empty_aligned(self.N, dtype="complex128")
         X = pyfftw.empty_aligned(self.N, dtype="complex128")
         plan_forward = pyfftw.FFTW(x, X)
@@ -243,21 +243,40 @@ class GNLSE:
             """
             The right hand side of the differential equation to integrate.
             """
-
+            self.n2log["z"].append(z)
             progress_bar.n = round(z, 3)
             progress_bar.update(0)
             #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
-            if self.active:
-                if z != 0.0:
-                    self.dispersion_model.AW = x[:]
-                self.D = self.dispersion_model.D(self.V)
-
-                self.n2log["z"].append(z)
-                self.n2log["n2"].append(self.dispersion_model.N2Total/self.dispersion_model.dopant_concentration)
-                self.n2log["E"].append(self.dispersion_model.pulse_energy_log)
-                self.D = np.fft.fftshift(self.D) #taking same step as above
-            
+            #need step size for gain modelling - extract from call stack
+            stack = [obj for obj in inspect.stack()]
+            #this function will be called by rk_step and select_initial_step from scipy's integration library - both found in position 3 of the call stack
+            object = stack[3]
+            localvars = object.frame.f_locals
+            if object.function == "select_initial_step":
+                step_size = localvars["h0"]
+            elif object.function == "rk_step":
+                step_size = localvars["h"]
+            elif object.function == "__init__":
+                step_size = 0
+            else:
+                raise RuntimeError("Caller stack object not recognised, cannot extract step size")
+                
             x[:] = AW * np.exp(self.D * z)
+
+            #gain modelling part
+            if self.active:
+                self.gain_model.AW = deepcopy(x[:])
+                self.gain_model.N2()
+                self.gain_model.CalculateGain()
+                G = self.gain_model.gain * self.gain_model.AW * step_size
+                self.n2log["n2"].append(self.gain_model.n2)
+                self.n2log["stepsize"].append(step_size)
+                self.n2log["G"].append(sum(G))
+            else:
+                G = np.zeros_like(x[:])
+
+            x[:] += G
+
             At = plan_forward().copy()
             IT = np.abs(At)**2
 
@@ -273,8 +292,8 @@ class GNLSE:
                 X[:] = At * IT
                 M = plan_inverse()
 
-            rv = 1j * self.gamma * self.W * M * np.exp(
-                -self.D * z)
+            rv = (1j * self.gamma * self.W * M * np.exp(
+                -self.D * z))
             self.n2log["rv"].append(rv)
             return rv
 

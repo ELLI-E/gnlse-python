@@ -10,7 +10,7 @@ modify main solving method to no longer use solve_ivp and instead perform rk45 s
 import numpy as np
 from gnlse_main.common import hplanck,c
 
-class Gain:
+class GainModel:
     AW = None #amplitude spectrum
     n2 = None #population inversion fraction
     NT = None #total density of dopant, m^-3
@@ -25,7 +25,9 @@ class Gain:
     overlap_pump = None
     frequencies = None
     wavelengths = None
-    def __init__(self,emission_cs,absorption_cs,lifetime,fiber_area,rep_rate,overlap_s,overlap_p,pump_power,NT, pump_wavelength = 975):
+    dt = None
+
+    def __init__(self,emission_cs,absorption_cs,lifetime,fiber_area,rep_rate,pump_power,NT, pump_wavelength = 975,overlap_p = 1,overlap_s = 1):
         #defines time-independent gain parameters
         self.emission_cross_section = emission_cs
         self.absorption_cross_section = absorption_cs
@@ -71,6 +73,7 @@ class Gain:
         self.n2 = numerator/denominator
 
     def SetFrequency(self,v):
+        self.frequencies = v
         self.v = v
         self.wavelengths = (c/v)*1e12
         self.sigma_a = np.array([self.emission_cross_section[r"cross section(m^2)"][(np.abs(self.emission_cross_section["wavelength(nm)"] - wavelength)).argmin()] for wavelength in self.wavelengths])
