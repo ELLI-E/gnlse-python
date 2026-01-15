@@ -120,6 +120,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         Is = Ps/self.fiber_area
         #set central frequency as average weighted by intensity
         central_frequency = np.average(self.v,weights=Isw)
+        self.w0 = central_frequency
         #get as wavelength in nm
         central_wavelength = (c/central_frequency)*1e12
         #now we find the cross section at central_frequency
@@ -156,6 +157,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         lhs = np.multiply(self.sigma_e, n2)
         rhs = np.multiply(self.sigma_a, np.subtract(1, n2))
         gain = self.NT * np.subtract(lhs,rhs)
+        self.gain = gain
         return gain
     
     def D(self, V):
@@ -167,7 +169,7 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
                 for i, beta in enumerate(self.betas))
         #compute value of gain function
         gain = self.CalculateGain()
-        L = (1j * B) - (self.alpha / 2) + (gain/4) 
+        L = (1j * B) - (self.alpha / 2) + (gain/2) 
         return L
 
 class DispersionFiberFromInterpolation(Dispersion):

@@ -56,15 +56,18 @@ if __name__ == '__main__':
     setup.self_steepening = True
     setup.active_fiber = True
 
-    setup.gain = gnlse_main.gain.GainModel(emission,absorption,lifetime,fiber_area,repetition_rate,pump_power,dopant_concentration)
-    #setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
-    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylor(loss,betas)
+    #setup.gain = gnlse_main.gain.GainModel(emission,absorption,lifetime,fiber_area,repetition_rate,pump_power,dopant_concentration)
+    setup.dispersion_model = gnlse_main.DispersionFiberFromTaylorWithGain(loss,betas,fiber_area,dopant_concentration,emission,absorption,lifetime,pump_power,repetition_rate=repetition_rate)
+    #setup.dispersion_model = gnlse_main.DispersionFiberFromTaylor(loss,betas)
+
+    setup.raman_model = gnlse_main.raman_blowwood
+
     solver = gnlse_main.gnlse.GNLSE(setup)
     
     #test in dispersion operator
-    solution = solver.run()
+    solution = solver.run_gain()
 
     gnlse_main.plot_delay_vs_distance(solution)
     plt.figure(figsize=(10,3))
     gnlse_main.visualization.plot_energy_vs_distance(solution)
-    plt.show()
+

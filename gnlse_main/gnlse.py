@@ -4,6 +4,7 @@ import pyfftw
 import tqdm
 import inspect
 from copy import deepcopy
+from gnlse_main import ssfm_rk45
 from gnlse_main.common import c
 from gnlse_main.import_export import write_mat, read_mat
 
@@ -195,6 +196,7 @@ class GNLSE:
         self.RW = None
         if setup.raman_model:
             self.fr, RT = setup.raman_model(self.t)
+            self.RT = RT
             if np.abs(self.fr) < np.finfo(float).eps:
                 self.RW = None
             else:
@@ -208,14 +210,13 @@ class GNLSE:
             self.A = setup.pulse_model
         # Dispersion operator
 
-        if setup.dispersion_model:
-            #if D includes gain, it needs the frequencies
+        if setup.dispersion_model and not self.active:
             self.D = setup.dispersion_model.D(self.V)
         if self.active:
-            self.gain_model = setup.gain
-            self.gain_model.SetFrequency(((self.Omega * 1e12)/(2*np.pi)))
-            self.gain_model.AW = np.fft.fft(self.A)
-            self.gain_model.dt = self.t[1] - self.t[0]
+            self.dispersion_model = setup.dispersion_model
+            self.dispersion_model.SetFrequency(((self.Omega * 1e12)/(2*np.pi)))
+            self.dispersion_model.AW = np.fft.fft(self.A)
+            self.dispersion_model.dt = self.t[1] - self.t[0]
             
         else:
             self.D = np.zeros(self.V.shape)
@@ -246,20 +247,6 @@ class GNLSE:
             self.n2log["z"].append(z)
             progress_bar.n = round(z, 3)
             progress_bar.update(0)
-            #at each z, evaluate the gain function and update the D operator if the fiber is active - gain function is in the dispersion operator
-            #need step size for gain modelling - extract from call stack
-            stack = [obj for obj in inspect.stack()]
-            #this function will be called by rk_step and select_initial_step from scipy's integration library - both found in position 3 of the call stack
-            object = stack[3]
-            localvars = object.frame.f_locals
-            if object.function == "select_initial_step":
-                step_size = localvars["h0"]
-            elif object.function == "rk_step":
-                step_size = localvars["h"]
-            elif object.function == "__init__":
-                step_size = 0
-            else:
-                raise RuntimeError("Caller stack object not recognised, cannot extract step size")
                 
             x[:] = AW * np.exp(self.D * z)
 
@@ -268,9 +255,9 @@ class GNLSE:
                 self.gain_model.AW = deepcopy(x[:])
                 self.gain_model.N2()
                 self.gain_model.CalculateGain()
-                G = self.gain_model.gain * self.gain_model.AW * step_size
+                G = (self.gain_model.gain/2) * self.gain_model.AW
+                self.n2log["E"].append(self.gain_model.pulse_energy)
                 self.n2log["n2"].append(self.gain_model.n2)
-                self.n2log["stepsize"].append(step_size)
                 self.n2log["G"].append(sum(G))
             else:
                 G = np.zeros_like(x[:])
@@ -293,7 +280,7 @@ class GNLSE:
                 M = plan_inverse()
 
             rv = (1j * self.gamma * self.W * M * np.exp(
-                -self.D * z))
+                -self.D * z)) + (G)
             self.n2log["rv"].append(rv)
             return rv
 
@@ -320,3 +307,9 @@ class GNLSE:
             AW[i, :] = np.fft.fftshift(AW[i, :]) * self.N * dt
         
         return Solution(self.t, self.Omega, self.w_0, Z, At, AW)
+    
+    def run_gain(self):
+        dt = self.t[1] - self.t[0]
+        Ew0 = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(self.A)))
+        solution = ssfm_rk45.solve(self,Ew0)
+        return solution
