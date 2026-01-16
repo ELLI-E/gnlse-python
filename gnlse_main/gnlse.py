@@ -59,7 +59,7 @@ class GNLSESetup:
         self.raman_model = None
         self.self_steepening = False
         self.gain = False
-
+        
         self.rtol = 1e-3
         self.atol = 1e-4
         self.method = 'RK45'
@@ -91,6 +91,7 @@ class Solution:
         self.Z = Z
         self.At = At
         self.AW = AW
+        self.E = None
 
     def to_file(self, path):
         """

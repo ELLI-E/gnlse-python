@@ -132,10 +132,10 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         abs_cross_section_pump = self.absorption[r"cross section(m^2)"][(np.abs(self.absorption["wavelength(nm)"]-pump_wavelength)).argmin()]
 
         #Now compute R and W values
-        R12 = (abs_cross_section_pump*Ip)/(hplanck*pump_frequency)
-        R21 = (em_cross_section_pump*Ip)/(hplanck*pump_frequency)
-        W12 = (abs_cross_section_signal*Is)/(hplanck*central_frequency)
-        W21 = (em_cross_section_signal*Is)/(hplanck*central_frequency)
+        R12 = (abs_cross_section_pump*Ip)/(hplanck*pump_frequency*self.fiber_area)
+        R21 = (em_cross_section_pump*Ip)/(hplanck*pump_frequency*self.fiber_area)
+        W12 = (abs_cross_section_signal*Is)/(hplanck*central_frequency*self.fiber_area)
+        W21 = (em_cross_section_signal*Is)/(hplanck*central_frequency*self.fiber_area)
 
         #finally compute N2
         numerator = R12 + W12
@@ -157,8 +157,8 @@ class DispersionFiberFromTaylorWithGain(Dispersion):
         lhs = np.multiply(self.sigma_e, n2)
         rhs = np.multiply(self.sigma_a, np.subtract(1, n2))
         gain = self.NT * np.subtract(lhs,rhs)
-        self.gain = gain
-        return gain
+        self.gain = gain/2
+        return gain/2
     
     def D(self, V):
         # Damping

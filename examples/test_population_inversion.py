@@ -70,4 +70,8 @@ if __name__ == '__main__':
     gnlse_main.plot_delay_vs_distance(solution)
     plt.figure(figsize=(10,3))
     gnlse_main.visualization.plot_energy_vs_distance(solution)
+    plt.figure(figsize=(10,3))
+    plt.plot(solution.Z,np.array(solution.n2)/dopant_concentration)
+    plt.ylim(0,1)
+    plt.show()
 
