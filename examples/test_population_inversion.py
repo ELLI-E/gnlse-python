@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     # Numerical parameters
     # number of grid time points
-    setup.resolution = 2**13
+    setup.resolution = 2**14
     # time window [ps]
     setup.time_window = 12.5
     # number of distance points to save
@@ -23,10 +23,11 @@ if __name__ == '__main__':
     # Central wavelength [nm]
     setup.wavelength = 1030
     # Nonlinear coefficient [1/W/m]
-    setup.nonlinearity = 0
+    setup.nonlinearity = (4.531e-3)
     # Dispersion: derivatives of propagation constant at central wavelength
     # n derivatives of betas are in [ps^n/m]
-    betas = np.array([2.3e-2,58*1e-6])
+    betas = np.array([2e-2,62*1e-6])
+    betas = betas
     # Input pulse: pulse duration [ps]
     tFWHM = 0.5
     # for dispersive length calculation
@@ -44,12 +45,12 @@ if __name__ == '__main__':
     loss = 0.5/1000
     # Type of dyspersion operator: build from Taylor expansion
     #Set parameters necessary for gain modelling
-    gain_medium_radius = (11.6e-6)*0.5
+    gain_medium_radius = (20.6e-6)*0.5
     fiber_area = np.pi * (gain_medium_radius**2)
     dopant_concentration = (5e25)
     emission = pd.read_csv(r"data\emissionCS.csv") #get absorption and emission cross sections from csv
     absorption = pd.read_csv(r"data\absorptionCS.csv")
-    lifetime = 0.85e-3
+    lifetime = 0.85e-3  
     repetition_rate = 1e6 #10kHz
     pump_power = 5 #pump power in watts
 
@@ -73,5 +74,10 @@ if __name__ == '__main__':
     plt.figure(figsize=(10,3))
     plt.plot(solution.Z,np.array(solution.n2)/dopant_concentration)
     plt.ylim(0,1)
+    plt.figure()
+    gnlse_main.plot_wavelength_vs_distance(solution,[1010,1050])
+    plt.figure()
+    gnlse_main.visualization.plot_final_spectrum(solution,[980,1100],include_initial=True)
+    plt.ylim(-50,15)
     plt.show()
 

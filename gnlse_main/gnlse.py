@@ -311,6 +311,6 @@ class GNLSE:
     
     def run_gain(self):
         dt = self.t[1] - self.t[0]
-        Ew0 = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(self.A)))
+        Ew0 = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(self.A)))*dt
         solution = ssfm_rk45.solve(self,Ew0)
         return solution

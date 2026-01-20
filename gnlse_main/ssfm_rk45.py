@@ -20,7 +20,7 @@ def ssfm_step(solver,Aw0,HRw,center_frequency):
     #evaluate Tr
     
     
-    Tr = solver.fr * np.gradient(np.imag(np.fft.fftshift(HRw)),dF)
+    Tr = solver.fr * np.gradient(np.imag(np.fft.fftshift(HRw)),2*np.pi*dF)
     Tr = Tr[0]
 
     #evaluate nonlinear part
@@ -42,7 +42,7 @@ def ssfm_step(solver,Aw0,HRw,center_frequency):
 
 def NonlinearRK(At,center_frequency,gamma,Tr,dt):
     N1 = At * np.conjugate(At) * At
-    N2 = (1j/center_frequency)*np.gradient(N1,dt)
+    N2 = (1j/(center_frequency))*np.gradient(N1,dt)
     N3 = Tr * At * np.gradient(At * np.conjugate(At),dt)
     return 1j * gamma * (N1 + N2 - N3)
 
@@ -68,7 +68,7 @@ def solve(solver,Aw0):
         Aw = ssfm_step(solver,Aw,HRw,solver.dispersion_model.w0*np.pi*2)
 
         aw_grid.append(deepcopy(Aw)) #tracks spectral shape evolution
-        at_grid.append(np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Aw))))
+        at_grid.append(np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(Aw))/dt))
         #log change in average power
         energy_curve_s.append(sum((abs(at_grid[-1])**2)*dt*1e-12))
         n2.append(solver.dispersion_model.N2Total)
